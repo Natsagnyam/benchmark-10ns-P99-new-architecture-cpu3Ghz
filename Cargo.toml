@@ -1,0 +1,22 @@
+[package]
+name = "natska_engine"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# libc is used only for mlockall and CPU affinity syscalls.
+# We avoid any other high-level abstractions or async runtimes.
+libc = "0.2"
+
+[profile.release]
+# Enforce raw performance and instruction-level determinism.
+opt-level = 3
+lto = "fat"             # Link-time optimization for better cross-module inlining control
+codegen-units = 1       # Reduces bloat, keeps the binary layout predictable
+panic = "abort"         # Removes stack unwinding code, saving cycles and binary size
+strip = true            # Removes symbols to ensure binary is lean
+debug = false           # Ensures no debug info metadata is injected into the hot path
+
+[profile.dev]
+# Keep debug info available for development profiling/benchmarking.
+panic = "abort"
