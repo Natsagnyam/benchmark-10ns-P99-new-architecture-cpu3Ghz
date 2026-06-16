@@ -186,7 +186,8 @@ pcie_aspm=off: Active State Power Management (ASPM) can introduce latency on the
 intel_pstate=disable: This prevents the CPU from dynamically scaling frequency based on load, which is a major source of jitter in high-frequency trading.
 
 sudo nano /etc/default/grub
-GRUB_CMDLINE_LINUX_DEFAULT="quiet splash iomem=relaxed intel_iommu=off hugepagesz=2M hugepages=512 isolcpus=1,2 nohz_full=1,2 rcu_nocbs=1,2 irqaffinity=0 intel_pstate=disable processo>
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash iomem=relaxed intel_iommu=off hugepagesz=2M hugepages=512 isolcpus=1,2 nohz_full=1,2 rcu_nocbs=1,2  
+irqaffinity=0 intel_pstate=disable processo>
 sudo update-grub
 sudo reboot
 

@@ -6,6 +6,12 @@ use std::cell::UnsafeCell;
 use std::mem::ManuallyDrop; // Add this for the union safety
 
 
+// Pre-allocate a large buffer for the latency histogram
+// 1000 buckets, each representing 10 cycles (approx 2-3ns on 3.5GHz CPU)
+const HISTOGRAM_SIZE: usize = 1000;
+pub static mut LATENCY_HISTOGRAM: [u64; HISTOGRAM_SIZE] = [0; HISTOGRAM_SIZE];
+
+
 #[repr(C)]
 pub union Index {
     pub plain: u32,
@@ -135,11 +141,6 @@ pub fn run_consumer_loop<const N: usize, T>(
     }
 }
 
-// Pre-allocate a large buffer for the latency histogram
-// 1000 buckets, each representing 10 cycles (approx 2-3ns on 3.5GHz CPU)
-const HISTOGRAM_SIZE: usize = 1000;
-static mut LATENCY_HISTOGRAM: [u64; HISTOGRAM_SIZE] = [0; HISTOGRAM_SIZE];
-
 pub fn record_latency(start: u64, end: u64) {
     let delta = end.wrapping_sub(start);
     // Bucket size: 10 cycles
@@ -149,7 +150,6 @@ pub fn record_latency(start: u64, end: u64) {
     }
 }
 
-// Call this AFTER the loop finishes
 pub fn print_histogram() {
     println!("--- Latency Histogram (10-cycle buckets) ---");
     unsafe {
@@ -158,5 +158,37 @@ pub fn print_histogram() {
                 println!("{} cycles: {} hits", i * 10, count);
             }
         }
+    }   
+}
+
+
+pub fn print_latency_report(total_iterations: u64) {
+    let mut cumulative: u64 = 0;
+    let mut p50: f64 = 0.0;
+    let mut p99: f64 = 0.0;
+    let mut p999: f64 = 0.0;
+    
+    // 3.0 GHz CPU => 0.333ns per cycle
+    const NS_PER_CYCLE: f64 = 0.333; 
+
+    // Access the global static histogram
+    unsafe {
+        for (i, count) in LATENCY_HISTOGRAM.iter().enumerate() {
+            if *count == 0 { continue; }
+            
+            cumulative += *count;
+            let percentile = (cumulative as f64 / total_iterations as f64) * 100.0;
+            let ns = (i * 10) as f64 * NS_PER_CYCLE;
+
+            if p50 == 0.0 && percentile >= 50.0 { p50 = ns; }
+            if p99 == 0.0 && percentile >= 99.0 { p99 = ns; }
+            if p999 == 0.0 && percentile >= 99.9 { p999 = ns; }
+        }
     }
+
+    println!("\n--- HFT Latency Performance Report ---");
+    println!("P50   : {:.2} ns", p50);
+    println!("P99   : {:.2} ns", p99);
+    println!("P99.9 : {:.2} ns", p999);
+    println!("--------------------------------------");
 }
