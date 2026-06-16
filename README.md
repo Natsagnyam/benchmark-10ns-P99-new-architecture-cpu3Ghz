@@ -33,7 +33,33 @@ P99.9       9.99 ns
 cargo build --release
 sudo taskset -c 0,1 ./target/release/natska_engine
 (CPU has only 2 physical cores,core0,core1. Core1 is isolated from the kernel but not core0, mother core cannot be isolated from the kernel)
-GRUB_CMDLINE_LINUX_DEFAULT="quiet splash iomem=relaxed intel_iommu=off hugepagesz=2M hugepages=512 isolcpus=1 nohz_full=1 rcu_nocbs=1 irqaffinity=0 intel_pstate=disable kthread_cpus=0>
+
+### System Tuning & Kernel Configuration
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash iomem=relaxed intel_iommu=off hugepagesz=2M hugepages=512 isolcpus=1 nohz_full=1 rcu_nocbs=1 irqaffinity=0 intel_pstate=disable kthread_cpus=0"
+## Parameter Breakdown
+iomem=relaxed: Permits user-space access to physical memory addresses; critical for mapping PCIe BARs for kernel-bypass networking.
+
+intel_iommu=off: Disables the I/O Memory Management Unit to eliminate the latency overhead of DMA remapping, ensuring the most direct path between the NIC and memory.
+
+hugepagesz=2M hugepages=512: Pre-allocates 1GB of contiguous physical memory to eliminate Page Table Walks and TLB (Translation Lookaside Buffer) misses during the hot-path.
+
+isolcpus=1: Removes Core 1 from the Linux scheduler; it will no longer process general-purpose OS tasks, leaving it exclusively for the execution thread.
+
+nohz_full=1: Disables the system tick timer on Core 1, preventing the kernel from interrupting the engine to perform housekeeping tasks.
+
+rcu_nocbs=1: Offloads Read-Copy-Update (RCU) callbacks from the isolated core to prevent unpredictable latency spikes.
+
+irqaffinity=0: Forces all system interrupts (NIC, disk, USB) to be handled by Core 0, ensuring the "clean" core (Core 1) remains uncontended.
+
+intel_pstate=disable: Forces the CPU to run at a fixed frequency, preventing the governor from transitioning between P-states (power states), which is a common source of micro-jitter.
+
+kthread_cpus=0: a boot parameter used to restrict the CPUs on which the kernel can spawn new kernel threads.
+When you use this flag:
+It forces the kernel to place general-purpose kernel threads and housekeeping tasks exclusively on the specified CPU(s)—in your configuration, Core 0.
+This further protects your isolated core (Core 1) by preventing the kernel from "spawning off" background processes or management threads onto the core you have reserved for your low-latency execution engine.
+kthread_cpus=0: Restricts the kernel from spawning new kernel threads on any core except Core 0. This acts as a secondary enforcement mechanism to ensure that OS-level housekeeping tasks never migrate onto the isolated "hot-path" core.
+
+
 
 
 ![ Inventory benchmark architect 2026: Union-Based Synchronization](docs/JPEG/inventory benchmark architect 2026: Union-Based Synchronization.png)
