@@ -8,6 +8,11 @@ A low-latency, deterministic execution engine designed for ultra-high-frequency 
 
 ![invent_2027_hft_manifesto](docs/JPEG/invent_2027_hft_manifesto.png)
 
+![new_architect_hft_inventory_benchmark](docs/JPEG/new_architect_hft_inventory_benchmark.png)
+
+![memoryOrder__MESI.png](docs/JPEG/memoryOrder__MESI.png.png)
+
+![Lock-free-hot-path-HFT-Low-latency](docs/JPEG/Lock-free-hot-path-HFT-Low-latency.png)
 
 ## Core Architecture
     • Lock-Free Design: Implements a high-performance, single-producer, single-consumer (SPSC) ring buffer architecture.
@@ -101,13 +106,7 @@ kthread_cpus=0: Restricts the kernel from spawning new kernel threads on any cor
 
 ![NIC_accesses](docs/JPEG/NIC_accesses.png)
 
-![new_architect_hft_inventory_benchmark](docs/JPEG/new_architect_hft_inventory_benchmark.png)
-
-![memoryOrder__MESI.png](docs/JPEG/memoryOrder__MESI.png.png)
-
-![Lock-free-hot-path-HFT-Low-latency](docs/JPEG/Lock-free-hot-path-HFT-Low-latency.png)
-
-![Linker's paradox](docs/JPEG/Linker's paradox.png)
+![Linker's paradox](docs/JPEG/Linker's_paradox.png)
 
 ![L1L2_caches. My latest benchmark ison the L1. Because it has 10ns. It means there is no chance to be in the L2! We are the winner!](docs/JPEG/L1L2_caches.png)
 
